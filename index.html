@@ -3,356 +3,497 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeneticPRS — Cancer Risk Analyzer</title>
+    <title>GeneticPRS — Analitik Kanker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* ─── CSS STYLES (Inlined) ─── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg: #0e0f11;
-            --bg2: #161719;
-            --bg3: #1e2022;
-            --border: rgba(255,255,255,0.08);
-            --border2: rgba(255,255,255,0.14);
-            --text: #e8e6e0;
-            --text2: #8a887f;
-            --text3: #555450;
-            --accent: #c8f07a;
-            --accent2: #9be05a;
-            --red: #f07a7a;
-            --orange: #f0b97a;
-            --yellow: #f0e07a;
-            --green: #7af0a8;
-            --blue: #7ab8f0;
-            --font-sans: 'DM Sans', sans-serif;
-            --font-serif: 'Instrument Serif', serif;
-            --font-mono: 'DM Mono', monospace;
+            --bg-main: #f4f7f6;
+            --bg-surface: #ffffff;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --border-color: #e2e8f0;
+            --primary: #3182ce;
+            --primary-hover: #2b6cb0;
+            
+            /* Class Colors */
+            --c1-bg: #d4edda; --c1-text: #155724;
+            --c2-bg: #cce5ff; --c2-text: #004085;
+            --c3-bg: #fff3cd; --c3-text: #856404;
+            --c4-bg: #ffe8cc; --c4-text: #e67e22;
+            --c5-bg: #f8d7da; --c5-text: #721c24;
         }
 
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-sans);
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             font-size: 14px;
             line-height: 1.6;
+            display: flex;
             min-height: 100vh;
         }
 
-        #app { display: flex; min-height: 100vh; }
-
-        /* SIDEBAR */
+        /* Sidebar */
         #sidebar {
-            width: 260px;
-            min-height: 100vh;
-            background: var(--bg2);
-            border-right: 1px solid var(--border);
+            width: 280px;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
         }
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .logo-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+        .logo-subtitle { font-size: 12px; color: var(--text-muted); }
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 20px 24px 10px;
+            letter-spacing: 0.5px;
+        }
+        #history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px;
+        }
+        .history-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            background-color: var(--bg-main);
+        }
+        .history-item:hover { border-color: var(--border-color); }
+        .history-id { font-weight: 600; font-size: 13px; color: var(--text-main); word-break: break-all; }
+        .history-date { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-        .sidebar-header { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-icon { font-size: 22px; color: var(--accent); line-height: 1; }
-        .logo-title { font-size: 15px; font-weight: 500; color: var(--text); letter-spacing: -0.01em; }
-        .logo-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.02em; }
-        .sidebar-section-label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); padding: 16px 16px 8px; }
-
-        #history-list { flex: 1; overflow-y: auto; padding: 0 8px; }
-        .history-empty { font-size: 12px; color: var(--text3); padding: 8px 8px; font-style: italic; }
-        .history-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; }
-        .history-item:hover { background: var(--bg3); }
-        .history-item-id { font-size: 12px; font-family: var(--font-mono); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .history-item-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
-        .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
-        .btn-clear-history { background: none; border: 1px solid var(--border2); color: var(--text3); font-size: 12px; padding: 6px 10px; border-radius: 6px; cursor: pointer; width: 100%; transition: all 0.15s; }
-        .btn-clear-history:hover { color: var(--red); border-color: var(--red); }
-
-        /* MAIN */
+        /* Main Content */
         #main { flex: 1; overflow-y: auto; }
+        
+        /* Upload Area */
+        #upload-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px;
+        }
+        .upload-container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            background: var(--bg-surface);
+            padding: 48px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            border: 1px solid var(--border-color);
+        }
+        .upload-title { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+            margin-top: 24px;
+            cursor: pointer;
+            background: var(--bg-main);
+            transition: border-color 0.2s;
+        }
+        .drop-zone:hover { border-color: var(--primary); }
+        .btn-primary {
+            background-color: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .file-list { margin-top: 16px; text-align: left; }
+        .file-list div { padding: 8px 12px; background: var(--bg-main); border-radius: 4px; margin-bottom: 8px; font-size: 13px; font-weight: 500; }
 
-        /* UPLOAD */
-        #upload-section { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 40px; }
-        .upload-hero { max-width: 560px; width: 100%; text-align: center; }
-        .upload-title { font-size: 32px; font-weight: 300; line-height: 1.2; margin-bottom: 12px; letter-spacing: -0.02em; }
-        .italic-serif { font-family: var(--font-serif); font-style: italic; color: var(--accent); }
-        .upload-subtitle { font-size: 14px; color: var(--text2); margin-bottom: 32px; }
-        .drop-zone { border: 1px dashed var(--border2); border-radius: 12px; padding: 48px 32px; cursor: pointer; transition: all 0.2s; background: var(--bg2); }
-        .drop-zone:hover { border-color: var(--accent); background: rgba(200, 240, 122, 0.04); }
-        .drop-icon { font-size: 28px; margin-bottom: 10px; color: var(--accent); }
-        .btn-analyze { margin-top: 20px; background: var(--accent); color: #0e0f11; border: none; padding: 12px 32px; border-radius: 8px; font-weight: 500; cursor: pointer; }
-        .file-queue { margin-top: 16px; text-align: left; }
-        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; }
+        /* Dashboard */
+        .dashboard-container { padding: 32px; max-width: 1200px; margin: 0 auto; }
+        .topbar { display: flex; justify-content: space-between; margin-bottom: 24px; align-items: center; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-val { font-size: 24px; font-weight: 700; color: var(--text-main); }
+        .stat-val.danger { color: var(--c5-text); }
 
-        /* RESULTS */
-        .results-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg2); position: sticky; top: 0; z-index: 10; }
-        .results-tabs { display: flex; gap: 4px; }
-        .tab-btn { background: none; border: 1px solid var(--border); color: var(--text2); font-size: 12px; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
-        .tab-btn.active { background: var(--accent); color: #0e0f11; }
-        .btn-new { background: none; border: 1px solid var(--border2); color: var(--text2); font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; margin-left: 12px; }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .chart-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            height: 300px;
+        }
+        .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
 
-        /* PATIENT REPORT */
-        .patient-report { padding: 24px; max-width: 1200px; margin: auto; }
-        .report-header { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 28px; }
-        .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
-        .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; margin-bottom: 6px; }
-        .stat-value { font-size: 20px; font-weight: 500; font-family: var(--font-mono); }
-        .stat-value.accent { color: var(--accent); }
-        .stat-value.red { color: var(--red); }
+        /* Filters & Table */
+        .filter-container { margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        .filter-btn.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
 
-        .chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .chart-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-        .chart-card-title { font-size: 11px; color: var(--text3); text-transform: uppercase; margin-bottom: 14px; }
-        .chart-wrap { position: relative; height: 240px; }
+        .table-container {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: var(--bg-main); padding: 12px 20px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
+        td { padding: 14px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; font-weight: 500; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #fafafa; }
 
-        /* TABLE */
-        .disease-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        .disease-table th { text-align: left; padding: 8px 12px; font-size: 11px; color: var(--text3); text-transform: uppercase; border-bottom: 1px solid var(--border); }
-        .disease-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-        .cls-badge { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; }
-        .cls-5 { background: rgba(240,122,122,0.15); color: #f07a7a; }
-        .cls-4 { background: rgba(240,185,122,0.12); color: #f0b97a; }
-        .ai-btn { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; }
-        .ai-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+        .b-1 { background: var(--c1-bg); color: var(--c1-text); }
+        .b-2 { background: var(--c2-bg); color: var(--c2-text); }
+        .b-3 { background: var(--c3-bg); color: var(--c3-text); }
+        .b-4 { background: var(--c4-bg); color: var(--c4-text); }
+        .b-5 { background: var(--c5-bg); color: var(--c5-text); }
 
-        /* MODAL */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-        .modal-box { background: var(--bg2); border: 1px solid var(--border2); border-radius: 14px; width: 100%; max-width: 560px; max-height: 80vh; overflow-y: auto; }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
-        .modal-body { padding: 20px; font-size: 14px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
-        .spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-ai { background: transparent; border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 600; }
+        .btn-ai:hover { border-color: var(--primary); color: var(--primary); }
 
-        @media (max-width: 750px) { #sidebar { display: none; } }
+        /* Modal */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: #fff; width: 100%; max-width: 500px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .modal-header { padding: 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+        .modal-body { padding: 20px; font-size: 14px; color: var(--text-main); line-height: 1.6; max-height: 60vh; overflow-y: auto; }
+        .close-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
     </style>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
-<div id="app">
     <aside id="sidebar">
         <div class="sidebar-header">
-            <div class="logo">
-                <span class="logo-icon">⬡</span>
-                <div>
-                    <div class="logo-title">GeneticPRS</div>
-                    <div class="logo-sub">Cancer Risk Analyzer</div>
-                </div>
-            </div>
+            <div class="logo-title">GeneticPRS</div>
+            <div class="logo-subtitle">Clinical Dashboard</div>
         </div>
-        <div class="sidebar-section-label">Riwayat Sampel</div>
-        <div id="history-list"><div class="history-empty">Belum ada data</div></div>
-        <div class="sidebar-footer">
-            <button class="btn-clear-history" onclick="clearHistory()">Hapus Riwayat</button>
-        </div>
+        <div class="section-label">Riwayat Cloud</div>
+        <div id="history-list"></div>
     </aside>
 
     <main id="main">
         <section id="upload-section">
-            <div class="upload-hero">
-                <div class="upload-title"><span class="italic-serif">Analisis Risiko</span> Genetik Kanker</div>
-                <p class="upload-subtitle">Upload file JSON PRS untuk visualisasi dashboard interaktif.</p>
+            <div class="upload-container">
+                <div class="upload-title">Analisis Risiko Genetik</div>
+                <p style="color: var(--text-muted);">Unggah file JSON Polygenic Risk Score pasien.</p>
+                
                 <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-                    <input type="file" id="file-input" accept=".json" multiple hidden>
-                    <div class="drop-icon">↑</div>
-                    <div class="drop-label">Klik atau seret file JSON ke sini</div>
+                    <input type="file" id="file-input" accept=".json" hidden>
+                    <div style="font-weight: 600; color: var(--text-main);">Pilih File JSON</div>
                 </div>
-                <div id="file-queue" class="file-queue" style="display:none"></div>
-                <button id="analyze-btn" class="btn-analyze" style="display:none" onclick="analyzeAll()">Analisis Sekarang</button>
+                
+                <div id="file-queue" class="file-list"></div>
+                <button id="btn-analyze" class="btn-primary" style="display: none;" onclick="processFile()">Proses Data</button>
             </div>
         </section>
 
-        <section id="results-section" style="display:none">
-            <div class="results-topbar">
-                <div id="results-tabs" class="results-tabs"></div>
-                <button class="btn-new" onclick="location.reload()">+ Upload Baru</button>
+        <section id="dashboard-section" style="display: none;">
+            <div class="dashboard-container">
+                <div class="topbar">
+                    <h2 style="font-size: 20px; font-weight: 700;">Laporan Pasien</h2>
+                    <button class="btn-outline" onclick="location.reload()">Upload Baru</button>
+                </div>
+
+                <div class="stat-grid" id="stat-container"></div>
+
+                <div class="chart-grid">
+                    <div class="chart-box">
+                        <div class="chart-title">Distribusi Kelas Risiko</div>
+                        <div style="position: relative; height: 230px;"><canvas id="chart-class"></canvas></div>
+                    </div>
+                    <div class="chart-box">
+                        <div class="chart-title">Top 5 Relative Risk (RR)</div>
+                        <div style="position: relative; height: 230px;"><canvas id="chart-rr"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="filter-container">
+                    <button class="filter-btn active" onclick="filterTable('all', this)">Semua Kelas</button>
+                    <button class="filter-btn" onclick="filterTable('5', this)">Class 5</button>
+                    <button class="filter-btn" onclick="filterTable('4', this)">Class 4</button>
+                    <button class="filter-btn" onclick="filterTable('3', this)">Class 3</button>
+                    <button class="filter-btn" onclick="filterTable('2', this)">Class 2</button>
+                    <button class="filter-btn" onclick="filterTable('1', this)">Class 1</button>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Penyakit</th>
+                                <th>PRS Score</th>
+                                <th>Risiko</th>
+                                <th>Relative Risk</th>
+                                <th>Analisa AI</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
             </div>
-            <div id="results-content"></div>
         </section>
     </main>
-</div>
 
-<div id="ai-modal" class="modal-overlay" style="display:none">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-title">Ringkasan AI — <span id="modal-disease-name"></span></div>
-            <button style="background:none; border:none; color:var(--text3); cursor:pointer;" onclick="closeModal()">✕</button>
-        </div>
-        <div id="modal-body" class="modal-body"></div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-<script>
-    /* ─── JS LOGIC (Inlined) ─── */
-    let loadedFiles = [];
-    let allResults = [];
-    let activeTab = 0;
-    const chartInstances = {};
-
-    const CLS_LABEL = { 1: "Sangat Rendah", 2: "Rendah", 3: "Sedang", 4: "Tinggi", 5: "Sangat Tinggi" };
-    const CLS_COLOR = { 1: "#7af0a8", 2: "#7ab8f0", 3: "#f0e07a", 4: "#f0b97a", 5: "#f07a7a" };
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbwfxdsDo8MV2PN0bd52qUJTfp_HttWrG9tnR1gDriLFKrCvWxqYClw_yQb-rVRUmI29/exec";
-
-    document.addEventListener("DOMContentLoaded", () => {
-        setupDropZone();
-        loadHistory();
-    });
-
-    function setupDropZone() {
-        const dz = document.getElementById("drop-zone");
-        const fi = document.getElementById("file-input");
-        fi.addEventListener("change", e => handleFiles(Array.from(e.target.files)));
-        dz.addEventListener("dragover", e => { e.preventDefault(); dz.style.borderColor = "var(--accent)"; });
-        dz.addEventListener("dragleave", () => dz.style.borderColor = "var(--border2)");
-        dz.addEventListener("drop", e => {
-            e.preventDefault();
-            handleFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith(".json")));
-        });
-    }
-
-    function handleFiles(files) {
-        files.forEach(f => {
-            if (!loadedFiles.find(x => x.name === f.name)) loadedFiles.push({ name: f.name, file: f });
-        });
-        renderFileQueue();
-    }
-
-    function renderFileQueue() {
-        const q = document.getElementById("file-queue");
-        const btn = document.getElementById("analyze-btn");
-        q.style.display = loadedFiles.length ? "block" : "none";
-        btn.style.display = loadedFiles.length ? "inline-block" : "none";
-        q.innerHTML = loadedFiles.map((f, i) => `<div class="file-item"><span>${f.name}</span><button onclick="loadedFiles.splice(${i},1);renderFileQueue();" style="background:none;border:none;color:var(--text3);cursor:pointer;">✕</button></div>`).join("");
-    }
-
-    async function analyzeAll() {
-        allResults = [];
-        for (const f of loadedFiles) {
-            const text = await f.file.text();
-            const data = JSON.parse(text);
-            allResults.push(processData(data, f.name));
-        }
-        showResults();
-        saveHistory();
-    }
-
-    function processData(raw, filename) {
-        const diseases = raw.diseases || [];
-        const sorted = [...diseases].sort((a, b) => parseFloat(b.rr) - parseFloat(a.rr));
-        const countByClass = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        diseases.forEach(d => countByClass[parseInt(d.class_status)]++);
-        return {
-            sampleId: raw.header?.sample_id || filename,
-            diseases: sorted,
-            countByClass,
-            highRisk: diseases.filter(d => parseInt(d.class_status) >= 4),
-            totalVariants: diseases.reduce((s, d) => s + (parseInt(d.n_variants) || 0), 0),
-            date: raw.date_created || "-"
-        };
-    }
-
-    function showResults() {
-        document.getElementById("upload-section").style.display = "none";
-        document.getElementById("results-section").style.display = "block";
-        renderTabs();
-        renderReport(0);
-    }
-
-    function renderTabs() {
-        document.getElementById("results-tabs").innerHTML = allResults.map((r, i) => `<button class="tab-btn ${i === activeTab ? 'active' : ''}" onclick="activeTab=${i};renderTabs();renderReport(${i});">${r.sampleId.slice(-15)}</button>`).join("");
-    }
-
-    function renderReport(idx) {
-        const r = allResults[idx];
-        const container = document.getElementById("results-content");
-        container.innerHTML = `
-            <div class="patient-report">
-                <div class="report-header">
-                    <div class="stat-card"><div class="stat-label">Sample ID</div><div class="stat-value accent" style="font-size:14px;">${r.sampleId}</div></div>
-                    <div class="stat-card"><div class="stat-label">Risiko Tinggi</div><div class="stat-value red">${r.highRisk.length}</div></div>
-                    <div class="stat-card"><div class="stat-label">Total Varian</div><div class="stat-value">${r.totalVariants.toLocaleString()}</div></div>
-                </div>
-                <div class="chart-row">
-                    <div class="chart-card"><div class="chart-card-title">Radar Risiko (Top 6)</div><div class="chart-wrap"><canvas id="radar-${idx}"></canvas></div></div>
-                    <div class="chart-card"><div class="chart-card-title">Distribusi Kelas</div><div class="chart-wrap"><canvas id="dist-${idx}"></canvas></div></div>
-                    <div class="chart-card"><div class="chart-card-title">Top Relative Risk</div><div class="chart-wrap"><canvas id="bar-${idx}"></canvas></div></div>
-                </div>
-                <table class="disease-table">
-                    <thead><tr><th>Penyakit</th><th>PRS</th><th>Kelas</th><th>RR</th><th>AI</th></tr></thead>
-                    <tbody>${r.diseases.map(d => `<tr><td>${d.disease_name}</td><td>${parseFloat(d.prs).toFixed(2)}</td><td><span class="cls-badge cls-${d.class_status}">${CLS_LABEL[d.class_status]}</span></td><td>${parseFloat(d.rr).toFixed(1)}x</td><td><button class="ai-btn" onclick="askAI('${d.disease_name}',${d.prs},${d.class_status},${d.rr})">Ringkas</button></td></tr>`).join("")}</tbody>
-                </table>
+    <div id="ai-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modal-title">AI Summary</span>
+                <button class="close-btn" onclick="document.getElementById('ai-modal').style.display='none'">✕</button>
             </div>
-        `;
-        initCharts(idx, r);
-    }
+            <div class="modal-body" id="modal-body">Memproses permintaan...</div>
+        </div>
+    </div>
 
-    function initCharts(idx, r) {
-        const top6 = r.diseases.slice(0, 6);
-        new Chart(document.getElementById(`radar-${idx}`), {
-            type: 'radar',
-            data: {
-                labels: top6.map(d => d.disease_name.slice(0, 12)),
-                datasets: [{ label: 'RR', data: top6.map(d => d.rr), borderColor: '#c8f07a', backgroundColor: 'rgba(200,240,122,0.1)' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: '#333' }, ticks: { display: false } } }, plugins: { legend: { display: false } } }
+    <script>
+        // 1. Firebase Initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcgBqk4ZMXtv0bg3OVUDqtpGSz6c8xTpI",
+            authDomain: "genetic-prs-analyzer.firebaseapp.com",
+            projectId: "genetic-prs-analyzer",
+            storageBucket: "genetic-prs-analyzer.firebasestorage.app",
+            messagingSenderId: "147195327932",
+            appId: "1:147195327932:web:a276f633d961b82faf67b9"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Constants & Variables
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwfxdsDo8MV2PN0bd52qUJTfp_HttWrG9tnR1gDriLFKrCvWxqYClw_yQb-rVRUmI29/exec";
+        const CLS_LABEL = { 1: "Sangat Rendah", 2: "Rendah", 3: "Sedang", 4: "Tinggi", 5: "Sangat Tinggi" };
+        let currentFile = null;
+        let chartInstances = {};
+
+        // 2. Event Listeners (Upload)
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                document.getElementById('file-queue').innerHTML = `<div>${currentFile.name}</div>`;
+                document.getElementById('btn-analyze').style.display = 'inline-block';
+            }
         });
-        new Chart(document.getElementById(`dist-${idx}`), {
-            type: 'doughnut',
-            data: {
-                labels: Object.values(CLS_LABEL),
-                datasets: [{ data: Object.values(r.countByClass), backgroundColor: Object.values(CLS_COLOR) }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#8a887f', font: { size: 10 } } } } }
-        });
-        new Chart(document.getElementById(`bar-${idx}`), {
-            type: 'bar',
-            data: {
-                labels: r.diseases.slice(0, 5).map(d => d.disease_name),
-                datasets: [{ data: r.diseases.slice(0, 5).map(d => d.rr), backgroundColor: '#f0b97a' }]
-            },
-            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-        });
-    }
 
-    function askAI(name, prs, cls, rr) {
-        document.getElementById("modal-disease-name").textContent = name;
-        document.getElementById("modal-body").innerHTML = `<div style="display:flex; gap:10px;"><div class="spinner"></div><span>AI sedang menganalisis...</span></div>`;
-        document.getElementById("ai-modal").style.display = "flex";
-        
-        fetch(GAS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain" },
-            body: JSON.stringify({ prompt: `Berikan penjelasan edukatif singkat untuk pasien tentang risiko ${name} dengan skor PRS ${prs}, kelas ${CLS_LABEL[cls]}, dan RR ${rr}x.` })
-        })
-        .then(res => res.json())
-        .then(data => { document.getElementById("modal-body").innerText = data.result || data; })
-        .catch(() => { document.getElementById("modal-body").innerText = "Gagal memproses AI."; });
-    }
+        // 3. Process Logic
+        function processFile() {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const processedData = formatData(data, currentFile.name);
+                    renderDashboard(processedData);
+                    saveToFirebase(processedData);
+                } catch(err) { alert("Format JSON tidak valid."); }
+            };
+            reader.readAsText(currentFile);
+        }
 
-    function closeModal() { document.getElementById("ai-modal").style.display = "none"; }
+        function formatData(raw, filename) {
+            const diseases = (raw.diseases || []).sort((a, b) => parseFloat(b.rr) - parseFloat(a.rr));
+            const countClass = {1:0, 2:0, 3:0, 4:0, 5:0};
+            diseases.forEach(d => countClass[parseInt(d.class_status)]++);
+            
+            return {
+                sampleId: raw.header?.sample_id || filename,
+                date: new Date().toISOString(),
+                diseases: diseases,
+                count: countClass,
+                total: diseases.length,
+                highRisk: diseases.filter(d => parseInt(d.class_status) >= 4).length,
+                variants: diseases.reduce((sum, d) => sum + (parseInt(d.n_variants) || 0), 0)
+            };
+        }
 
-    function saveHistory() {
-        allResults.forEach(r => localStorage.setItem(`prs_${r.sampleId}`, JSON.stringify(r)));
-        loadHistory();
-    }
+        // 4. Render Dashboard
+        function renderDashboard(data) {
+            document.getElementById('upload-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
 
-    function loadHistory() {
-        const list = document.getElementById("history-list");
-        const items = Object.keys(localStorage).filter(k => k.startsWith("prs_")).map(k => JSON.parse(localStorage.getItem(k)));
-        if (!items.length) return;
-        list.innerHTML = items.map(item => `<div class="history-item" onclick="loadSingle('${item.sampleId}')"><div class="history-item-id">${item.sampleId}</div><div class="history-item-date">${item.date}</div></div>`).join("");
-    }
+            // Stats
+            document.getElementById('stat-container').innerHTML = `
+                <div class="stat-card"><div class="stat-label">Sample ID</div><div class="stat-val" style="font-size:16px;">${data.sampleId}</div></div>
+                <div class="stat-card"><div class="stat-label">Total Penyakit</div><div class="stat-val">${data.total}</div></div>
+                <div class="stat-card"><div class="stat-label">Risiko Tinggi</div><div class="stat-val danger">${data.highRisk}</div></div>
+                <div class="stat-card"><div class="stat-label">Varian Diperiksa</div><div class="stat-val">${data.variants.toLocaleString()}</div></div>
+            `;
 
-    function loadSingle(sid) {
-        const data = JSON.parse(localStorage.getItem(`prs_${sid}`));
-        allResults = [data]; activeTab = 0; showResults();
-    }
+            // Table
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = data.diseases.map(d => `
+                <tr class="disease-row" data-class="${d.class_status}">
+                    <td>${d.disease_name}</td>
+                    <td>${parseFloat(d.prs).toFixed(2)}</td>
+                    <td><span class="badge b-${d.class_status}">Class ${d.class_status}</span></td>
+                    <td>${parseFloat(d.rr).toFixed(1)}x</td>
+                    <td><button class="btn-ai" onclick="requestAI('${d.disease_name}', ${d.prs}, ${d.class_status}, ${d.rr})">Ringkas</button></td>
+                </tr>
+            `).join('');
 
-    function clearHistory() { if(confirm("Hapus?")) { Object.keys(localStorage).filter(k=>k.startsWith("prs_")).forEach(k=>localStorage.removeItem(k)); location.reload(); } }
-</script>
+            renderCharts(data);
+        }
+
+        // 5. Chart.js Implementation
+        function renderCharts(data) {
+            const cClass = document.getElementById('chart-class');
+            const cRR = document.getElementById('chart-rr');
+            if(chartInstances.class) chartInstances.class.destroy();
+            if(chartInstances.rr) chartInstances.rr.destroy();
+
+            chartInstances.class = new Chart(cClass, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.values(CLS_LABEL),
+                    datasets: [{ data: Object.values(data.count), backgroundColor: ['#d4edda', '#cce5ff', '#fff3cd', '#ffe8cc', '#f8d7da'] }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+            });
+
+            const top5 = data.diseases.slice(0, 5);
+            chartInstances.rr = new Chart(cRR, {
+                type: 'bar',
+                data: {
+                    labels: top5.map(d => d.disease_name.slice(0,15)),
+                    datasets: [{ data: top5.map(d => d.rr), backgroundColor: '#3182ce', borderRadius: 4 }]
+                },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // 6. Table Filter Logic
+        function filterTable(cls, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            document.querySelectorAll('.disease-row').forEach(row => {
+                row.style.display = (cls === 'all' || row.dataset.class === cls) ? '' : 'none';
+            });
+        }
+
+        // 7. Robust AI Request (Fetch API)
+        async function requestAI(name, prs, cls, rr) {
+            const modal = document.getElementById('ai-modal');
+            const body = document.getElementById('modal-body');
+            document.getElementById('modal-title').innerText = `Analisis: ${name}`;
+            body.innerText = "Menghubungi server AI...";
+            modal.style.display = 'flex';
+
+            const payload = { prompt: `Jelaskan implikasi genetik secara profesional untuk kondisi: ${name}, PRS: ${prs}, Kelas: ${cls}, RR: ${rr}x.` };
+
+            try {
+                // Menggunakan text/plain untuk mengontrol pembatasan CORS dari Apps Script
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                body.innerHTML = (result.result || result.text || "Tidak ada respons spesifik.").replace(/\n/g, '<br>');
+            } catch (err) {
+                body.innerHTML = `<span style="color: #e74c3c;">Gagal memproses data AI. Pastikan status Google Apps Script aktif dan dapat diakses publik. Format return GAS harus berupa JSON. Detail error: ${err.message}</span>`;
+            }
+        }
+
+        // 8. Firebase Cloud Firestore Logic
+        async function saveToFirebase(data) {
+            try {
+                await db.collection("prs_results").doc(data.sampleId).set(data);
+                loadFirebaseHistory();
+            } catch (err) { console.error("Firebase Save Error:", err); }
+        }
+
+        async function loadFirebaseHistory() {
+            const list = document.getElementById('history-list');
+            try {
+                const snapshot = await db.collection("prs_results").orderBy("date", "desc").limit(15).get();
+                if(snapshot.empty) {
+                    list.innerHTML = `<div style="font-size:12px; color:#a0aec0;">Belum ada data di cloud.</div>`;
+                    return;
+                }
+                
+                let html = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const dObj = new Date(data.date);
+                    html += `
+                        <div class="history-item" onclick='renderDashboard(${JSON.stringify(data)})'>
+                            <div class="history-id">${data.sampleId}</div>
+                            <div class="history-date">${dObj.toLocaleDateString()}</div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            } catch (err) {
+                console.error("Firebase Load Error:", err);
+            }
+        }
+
+        // Initialize Cloud Data
+        window.onload = loadFirebaseHistory;
+    </script>
 </body>
 </html>
