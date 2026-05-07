@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRS Genetics Analyzer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
+        .upload-section { margin-bottom: 30px; padding: 20px; border: 2px dashed #ccc; text-align: center; }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 20px; }
+        .chart-container { flex: 1; min-width: 400px; }
+        .summary-container { flex: 1; min-width: 400px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .risk-5 { background-color: #ffcccc; }
+        .risk-4 { background-color: #ffe6cc; }
+    </style>
+</head>
+<body>
+
+    <h2>Analisa Polygenic Risk Score (Kanker)</h2>
+    
+    <div class="upload-section">
+        <p>Upload File JSON PRS Pasien</p>
+        <input type="file" id="jsonUpload" accept=".json">
+    </div>
+
+    <div id="resultArea" class="dashboard" style="display: none;">
+        <div class="chart-container">
+            <canvas id="riskChart"></canvas>
+        </div>
+        <div class="summary-container">
+            <h3>Ringkasan Risiko (AI Summary)</h3>
+            <p id="aiSummaryText">Sedang memproses analisa AI...</p>
+            
+            <h3>Tabel Klasifikasi</h3>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Disease</th>
+                        <th>Class Status</th>
+                        <th>Relative Risk (RR)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcgBqk4ZMXtv0bg3OVUDqtpGSz6c8xTpI",
+            authDomain: "genetic-prs-analyzer.firebaseapp.com",
+            projectId: "genetic-prs-analyzer",
+            storageBucket: "genetic-prs-analyzer.firebasestorage.app",
+            messagingSenderId: "147195327932",
+            appId: "1:147195327932:web:a276f633d961b82faf67b9"
+        };
+        const app = initializeApp(firebaseConfig);
+    </script>
+
+    <script>
+        let prsChart;
+
+        document.getElementById('jsonUpload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    processData(data);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function processData(jsonData) {
+            document.getElementById('resultArea').style.display = 'flex';
+            
+            const diseases = jsonData.diseases;
+            
+            // Siapkan data untuk Chart & Table
+            const labels = [];
+            const rrValues = [];
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = ''; // Bersihkan tabel sebelumnya
+
+            // Urutkan penyakit berdasarkan Class Status tertinggi
+            diseases.sort((a, b) => parseInt(b.class_status) - parseInt(a.class_status));
+
+            // Kita filter hanya Class 3, 4, 5 untuk chart agar tidak terlalu padat
+            const chartData = diseases.filter(d => parseInt(d.class_status) >= 3);
+
+            chartData.forEach(d => {
+                labels.push(d.disease_name);
+                rrValues.push(parseFloat(d.rr));
+            });
+
+            // Isi Tabel
+            diseases.forEach(d => {
+                const row = document.createElement('tr');
+                if (d.class_status === "5") row.classList.add('risk-5');
+                if (d.class_status === "4") row.classList.add('risk-4');
+                
+                row.innerHTML = `
+                    <td>${d.disease_name}</td>
+                    <td>Class ${d.class_status}</td>
+                    <td>${d.rr}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            renderChart(labels, rrValues);
+            fetchGeminiSummary(jsonData);
+        }
+
+        function renderChart(labels, data) {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            
+            if (prsChart) { prsChart.destroy(); } // Hapus chart lama jika upload file baru
+
+            prsChart = new Chart(ctx, {
+                type: 'radar', // Menggunakan grafik jaring laba-laba
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Relative Risk (RR) > Class 3',
+                        data: data,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+                    }]
+                },
+                options: {
+                    scales: { r: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Fungsi memanggil Google Apps Script yang terhubung ke Gemini
+        function fetchGeminiSummary(jsonData) {
+            // URL Web App dari Google Apps Script kamu
+            const GAS_URL = "URL_GOOGLE_APPS_SCRIPT_KAMU_DI_SINI"; 
+            
+            // Ekstrak data krusial saja agar payload tidak terlalu besar untuk dikirim ke GAS
+            const simplifiedData = jsonData.diseases.map(d => ({
+                name: d.disease_name, class: d.class_status, rr: d.rr
+            })).filter(d => parseInt(d.class) >= 4); // Kirim yang resikonya tinggi saja
+
+            fetch(GAS_URL, {
+                method: 'POST',
+                mode: 'cors', // Penting untuk komunikasi antar domain (Github -> Google)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: simplifiedData })
+            })
+            .then(response => response.text())
+            .then(summary => {
+                document.getElementById('aiSummaryText').innerText = summary;
+            })
+            .catch(err => {
+                console.error("Error calling Gemini via GAS:", err);
+                document.getElementById('aiSummaryText').innerText = "Gagal memuat rangkuman AI.";
+            });
+        }
+    </script>
+</body>
+</html>
