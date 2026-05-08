@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GeneticPRS — Clinical Dashboard v2</title>
+  <title>GeneticPRS — Clinical Dashboard v3</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
@@ -50,13 +50,16 @@
     .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
     .stat-value { font-size: 22px; font-weight: 700; margin-top: 8px; }
 
+    /* CHART GRID */
+    .chart-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
+    @media(max-width: 1200px) { .chart-container { grid-template-columns: 1fr 1fr; } }
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
     .card-title { font-weight: 600; margin-bottom: 20px; font-size: 15px; }
 
     .control-bar { display: flex; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 16px; }
     .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); cursor: pointer; font-size: 12px; font-weight: 500; }
     .filter-btn.active { background: var(--text-primary); color: white; border-color: var(--text-primary); }
-    .sort-select { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; }
+    .sort-select { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; outline: none; }
 
     table { width: 100%; border-collapse: collapse; }
     th { text-align: left; padding: 12px 16px; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border); background: #f8fafc; }
@@ -74,7 +77,7 @@
     #side-panel.open { right: 0; }
     .panel-header { padding: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; background: #f8fafc; }
     .panel-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-secondary); line-height: 1; }
-    .panel-content { padding: 24px; overflow-y: auto; flex: 1; }
+    .panel-content { padding: 24px; overflow-y: auto; flex: 1; scroll-behavior: smooth; }
     
     .panel-disease-title { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
     .panel-disease-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; margin-bottom: 16px; font-family: monospace; }
@@ -101,7 +104,7 @@
 <body>
 
   <aside id="sidebar">
-    <div class="sidebar-header"><div class="logo">GeneticPRS <span class="version-badge">v2 CDSS</span></div></div>
+    <div class="sidebar-header"><div class="logo">GeneticPRS <span class="version-badge">v3 Local KB</span></div></div>
     <div style="padding: 24px 24px 8px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Riwayat Cloud</div>
     <div id="history-list"></div>
     <div class="sidebar-footer"><button class="btn-danger-outline" onclick="clearAllHistory()">Hapus History</button></div>
@@ -114,14 +117,14 @@
         <div class="upload-hint" style="margin-bottom: 16px;">Tarik & Lepas file JSON PRS pasien di sini.</div>
         <input type="file" id="file-input" hidden accept=".json" multiple>
         <div style="font-size: 12px; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 6px;">
-          <span>✓ Knowledge Base Ready</span> | <span>✓ 100% Offline Mode</span>
+          <span>✓ Local Database Synced</span> | <span>✓ 100% Offline Mode</span>
         </div>
       </div>
     </div>
 
     <div id="dashboard-section" style="display: none;">
       <div class="header-row">
-        <h1 style="font-size: 24px; font-weight: 700;">Laporan Klinis</h1>
+        <h1 style="font-size: 24px; font-weight: 700;">Laporan Klinis Pasien</h1>
         <button class="filter-btn" style="background:white;" onclick="location.reload()">Upload Baru</button>
       </div>
       
@@ -131,6 +134,22 @@
         <div class="stat-card"><div class="stat-label">Sample ID</div><div class="stat-value" id="stat-id" style="font-size:16px;">-</div></div>
         <div class="stat-card"><div class="stat-label">Total Traits</div><div class="stat-value" id="stat-total">-</div></div>
         <div class="stat-card"><div class="stat-label">Actionable Risk (C4-C5)</div><div class="stat-value" id="stat-high" style="color:var(--color-c5)">-</div></div>
+        <div class="stat-card"><div class="stat-label">Total Varian Diperiksa</div><div class="stat-value" id="stat-variants">-</div></div>
+      </div>
+
+      <div class="chart-container">
+        <div class="card">
+          <div class="card-title">Distribusi Kategori</div>
+          <div style="position: relative; height: 220px;"><canvas id="chart-class"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Clinical Risk Matrix</div>
+          <div style="position: relative; height: 220px;"><canvas id="chart-matrix"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top 5 Relative Risk (RR)</div>
+          <div style="position: relative; height: 220px;"><canvas id="chart-rr"></canvas></div>
+        </div>
       </div>
 
       <div class="card">
@@ -167,7 +186,7 @@
       <button class="panel-close" onclick="closePanel()">✕</button>
     </div>
     
-    <div class="panel-content">
+    <div class="panel-content" id="panel-content-scroll">
       <div id="sp-risk-banner" class="risk-banner">
         <div>
           <h4>Kategori Pasien</h4>
@@ -206,33 +225,33 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <script>
-    // Konfigurasi Firebase (Tetap Aktif untuk History)
+    // 1. Firebase Config
     const firebaseConfig = { apiKey: "AIzaSyBcgBqk4ZMXtv0bg3OVUDqtpGSz6c8xTpI", authDomain: "genetic-prs-analyzer.firebaseapp.com", projectId: "genetic-prs-analyzer", storageBucket: "genetic-prs-analyzer.firebasestorage.app", messagingSenderId: "147195327932", appId: "1:147195327932:web:a276f633d961b82faf67b9" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
     let loadedSessions = [], activeIdx = 0;
-    let knowledgeBase = []; // Wadah untuk JSON Library
+    let knowledgeBase = []; 
     let bellCurveChart = null;
+    let charts = {};
 
     const colorMap = {1: '#10b981', 2: '#3b82f6', 3: '#94a3b8', 4: '#f59e0b', 5: '#ef4444'};
     const bgMap = {1: '#d1fae5', 2: '#dbeafe', 3: '#f1f5f9', 4: '#fef3c7', 5: '#fee2e2'};
 
-    // 1. INIT & FETCH KNOWLEDGE BASE
+    // 2. Fetch Knowledge Base dengan nama file baru
     window.onload = async () => {
       fetchHistory();
       try {
-        // Asumsi traits_library.json di-host di folder yang sama
-        const res = await fetch('traits_library.json');
+        const res = await fetch('traits_library_updated.json');
         if (res.ok) {
           const kbData = await res.json();
           knowledgeBase = kbData.traits || [];
-          console.log("Knowledge Base loaded:", knowledgeBase.length, "traits");
-        } else { console.warn("traits_library.json tidak ditemukan."); }
+          console.log("Updated Knowledge Base loaded:", knowledgeBase.length, "traits");
+        } else { console.warn("traits_library_updated.json tidak ditemukan. Memuat template kosong."); }
       } catch (err) { console.error("Gagal memuat Knowledge Base:", err); }
     };
 
-    // 2. DRAG & DROP LOGIC
+    // 3. Drag & Drop Logic
     const dz = document.getElementById('drop-zone');
     dz.onclick = () => document.getElementById('file-input').click();
     dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('dragover'); };
@@ -250,29 +269,54 @@
       
       for(let f of arr) {
         const json = JSON.parse(await f.text());
-        const data = {
-          sid: json.header?.sample_id || f.name.replace('.json',''),
-          traits: (json.diseases || []).sort((a,b) => a.disease_name.localeCompare(b.disease_name)),
-          total: (json.diseases || []).length,
-          high: (json.diseases || []).filter(d => parseInt(d.class_status) >= 4).length,
-          ts: new Date().toISOString()
-        };
-        loadedSessions.push(data);
-        saveToCloud(data);
+        processData(json, f.name);
       }
-      renderUI();
+      renderTabs();
+      if(loadedSessions.length > 0) switchTab(0);
     }
 
-    function renderUI() {
-      const tc = document.getElementById('tab-container');
-      tc.innerHTML = loadedSessions.map((s,i) => `<button class="tab-btn ${i===activeIdx?'active':''}" onclick="activeIdx=${i};renderUI()">${s.sid.slice(-15)}</button>`).join('');
-      const d = loadedSessions[activeIdx];
+    function processData(raw, filename) {
+      let traits = raw.diseases || [];
+      traits.sort((a, b) => a.disease_name.localeCompare(b.disease_name));
       
-      document.getElementById('stat-id').innerText = d.sid;
-      document.getElementById('stat-total').innerText = d.total;
-      document.getElementById('stat-high').innerText = d.high;
+      const countByClass = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      traits.forEach(t => countByClass[parseInt(t.class_status)]++);
 
-      applySort(document.getElementById('sort-select').value);
+      const sessionData = {
+        sampleId: raw.header?.sample_id || filename.replace('.json',''),
+        total: traits.length,
+        highRisk: traits.filter(t => parseInt(t.class_status) >= 4).length,
+        variants: traits.reduce((s, t) => s + (parseInt(t.n_variants) || 0), 0),
+        traits: traits,
+        countByClass: countByClass,
+        timestamp: new Date().toISOString()
+      };
+      
+      loadedSessions.push(sessionData);
+      saveToCloud(sessionData);
+    }
+
+    // 4. Tab & Dashboard Render
+    function renderTabs() {
+      const tc = document.getElementById('tab-container');
+      if(loadedSessions.length <= 1) { tc.style.display = 'none'; return; }
+      tc.style.display = 'flex';
+      tc.innerHTML = loadedSessions.map((s, i) => `<button class="tab-btn ${i === activeIdx ? 'active' : ''}" onclick="switchTab(${i})">${s.sampleId}</button>`).join('');
+    }
+
+    function switchTab(index) {
+      activeIdx = index;
+      renderTabs(); 
+      const data = loadedSessions[activeIdx];
+      
+      document.getElementById('stat-id').innerText = data.sampleId;
+      document.getElementById('stat-total').innerText = data.total;
+      document.getElementById('stat-high').innerText = data.highRisk;
+      document.getElementById('stat-variants').innerText = data.variants.toLocaleString();
+
+      document.getElementById('sort-select').value = 'az';
+      applySort('az'); 
+      initCharts(data); // Fungsi untuk restore Chart v3
     }
 
     function renderTable(list) {
@@ -309,9 +353,54 @@
       document.querySelectorAll('.row-item').forEach(r => r.style.display = (c==='all' || r.dataset.class===c) ? '' : 'none');
     }
 
-    // 3. LOGIKA KNOWLEDGE BASE & SIDE PANEL
+    // 5. RESTORE DASHBOARD CHARTS (V3)
+    function initCharts(data) {
+      if (charts.class) charts.class.destroy();
+      if (charts.rr) charts.rr.destroy();
+      if (charts.matrix) charts.matrix.destroy();
+
+      charts.class = new Chart(document.getElementById('chart-class'), {
+        type: 'doughnut',
+        data: {
+          labels: ['S. Rendah (C1)', 'Rendah (C2)', 'Sedang (C3)', 'Tinggi (C4)', 'S. Tinggi (C5)'],
+          datasets: [{ data: Object.values(data.countByClass), backgroundColor: Object.values(colorMap), borderWidth: 2, borderColor: '#ffffff' }]
+        },
+        options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 10, family: 'Inter' }, padding: 10, boxWidth: 12 } } } }
+      });
+
+      charts.matrix = new Chart(document.getElementById('chart-matrix'), {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Traits Matrix',
+            data: data.traits.map(t => ({ x: parseFloat(t.rr), y: parseFloat(t.prs), name: t.disease_name })),
+            backgroundColor: data.traits.map(t => colorMap[parseInt(t.class_status)]),
+            pointRadius: 6, pointHoverRadius: 8
+          }]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.name}: RR ${ctx.raw.x}, PRS ${ctx.raw.y.toFixed(2)}` } } },
+          scales: {
+            x: { title: { display: true, text: 'Relative Risk' }, grid: { color: '#f1f5f9' } },
+            y: { title: { display: true, text: 'Skor PRS' }, grid: { color: '#f1f5f9' } }
+          }
+        }
+      });
+
+      const top5 = [...data.traits].sort((a,b) => parseFloat(b.rr) - parseFloat(a.rr)).slice(0, 5);
+      charts.rr = new Chart(document.getElementById('chart-rr'), {
+        type: 'bar',
+        data: {
+          labels: top5.map(t => t.disease_name.length > 15 ? t.disease_name.substring(0, 15)+'...' : t.disease_name),
+          datasets: [{ data: top5.map(t => parseFloat(t.rr)), backgroundColor: top5.map(t => colorMap[parseInt(t.class_status)]), borderRadius: 6 }]
+        },
+        options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 } } } } }
+      });
+    }
+
+    // 6. KNOWLEDGE BASE & SIDE PANEL FIXES
     function getTraitFromKB(diseaseName) {
-      // Normalisasi string untuk pencarian yang lebih tangguh
       const query = diseaseName.toLowerCase().replace(/[^a-z0-9]/g, '');
       return knowledgeBase.find(t => t.display_name.toLowerCase().replace(/[^a-z0-9]/g, '') === query);
     }
@@ -320,7 +409,9 @@
       const panel = document.getElementById('side-panel');
       const kbData = getTraitFromKB(diseaseName);
 
-      // DOM Elements Binding
+      // BUG FIX: Reset Scroll Side-Panel
+      document.getElementById('panel-content-scroll').scrollTop = 0;
+
       document.getElementById('sp-title').innerText = diseaseName;
       document.getElementById('sp-class-label').innerText = `Class ${cls}`;
       document.getElementById('sp-rr-val').innerText = `${rr.toFixed(1)}x`;
@@ -328,7 +419,7 @@
       const riskBanner = document.getElementById('sp-risk-banner');
       riskBanner.style.borderColor = colorMap[cls];
       riskBanner.style.backgroundColor = bgMap[cls];
-      riskBanner.style.color = (cls >= 4) ? '#7f1d1d' : '#0f172a'; // Teks gelap jika high risk
+      riskBanner.style.color = (cls >= 4) ? '#7f1d1d' : '#0f172a';
 
       const recomBox = document.getElementById('sp-recom-box');
       recomBox.className = cls >= 4 ? 'recom-box high-risk' : 'recom-box';
@@ -338,42 +429,36 @@
         document.getElementById('sp-icd').innerText = `ICD-10: ${kbData.icd10_code || '-'}`;
         document.getElementById('sp-organ').innerText = `Organ: ${kbData.organ_system || '-'}`;
         
-        // Genes
+        // Genes hasil mapping CSV lokal
         const genesHTML = (kbData.genes_associated || []).map(g => `<span class="gene-tag">${g}</span>`).join('');
         document.getElementById('sp-genes').innerHTML = genesHTML;
 
-        // Content
         document.getElementById('sp-general-info').innerText = kbData.general_info || kbData.short_description || "-";
         document.getElementById('sp-causes').innerHTML = `<strong>Faktor Risiko Umum:</strong> ${kbData.causes || "-"}`;
         document.getElementById('sp-detection').innerHTML = `<strong>Skrining & Deteksi Dini:</strong> ${kbData.detection || "-"}`;
         
-        // Prevention (Split bullet points by pipe |)
         const prevText = kbData.prevention || "";
         document.getElementById('sp-prevention').innerHTML = prevText.split('|').map(p => `<li>${p.trim()}</li>`).join('');
 
-        // Recommendation based on Class
         const recKey = `recommendation_class${cls}`;
         document.getElementById('sp-recommendation').innerText = kbData[recKey] || "-";
-        document.getElementById('sp-clinical-note').innerText = kbData.clinical_note || "Laporan genetik bersifat probabilitas dan tidak mendiagnosa kanker.";
+        document.getElementById('sp-clinical-note').innerText = kbData.clinical_note || "Laporan genetik bersifat probabilitas.";
 
-        // Draw Bell Curve
         drawBellCurve(rr, kbData.rr_population_mean || 1.0);
       } else {
-        // Fallback jika tidak ada di Knowledge Base
         document.getElementById('sp-icd').innerText = `ICD-10: N/A`;
         document.getElementById('sp-organ').innerText = `Organ: N/A`;
         document.getElementById('sp-genes').innerHTML = '';
-        document.getElementById('sp-general-info').innerText = "Data literatur untuk trait ini sedang diperbarui dalam sistem.";
+        document.getElementById('sp-general-info').innerText = "Data literatur sedang diperbarui.";
         document.getElementById('sp-causes').innerHTML = "<strong>Penyebab:</strong> -";
         document.getElementById('sp-detection').innerHTML = "<strong>Deteksi Dini:</strong> -";
         document.getElementById('sp-prevention').innerHTML = "<li>Konsultasikan gaya hidup sehat dengan dokter Anda.</li>";
-        document.getElementById('sp-recommendation').innerText = cls >= 4 ? "Risiko Anda lebih tinggi dari rata-rata populasi. Silakan berkonsultasi dengan dokter untuk evaluasi lebih lanjut." : "Risiko Anda berada pada batas populasi umum.";
+        document.getElementById('sp-recommendation').innerText = cls >= 4 ? "Risiko Anda meningkat." : "Risiko Anda di rata-rata populasi.";
         document.getElementById('sp-clinical-note').innerText = "";
         
         drawBellCurve(rr, 1.0);
       }
 
-      // Geser Panel utama agar tidak tertutup (Optional UX)
       document.getElementById('main').style.marginRight = 'var(--panel-width)';
       panel.classList.add('open');
     }
@@ -383,15 +468,14 @@
       document.getElementById('main').style.marginRight = '0';
     }
 
-    // 4. CHART.JS: BELL CURVE GENERATOR
+    // 7. BELL CURVE GENERATOR
     function drawBellCurve(patientRR, meanRR = 1.0) {
       const ctx = document.getElementById('chart-bell-curve').getContext('2d');
       if (bellCurveChart) bellCurveChart.destroy();
 
-      // Parameter Normal Distribution Simulasi (Agar grafis terlihat bagus)
       const stdDev = 0.5; 
       const minX = Math.max(0, meanRR - (stdDev * 3));
-      const maxX = Math.max(patientRR + 0.5, meanRR + (stdDev * 3)); // Pastikan titik pasien selalu masuk chart
+      const maxX = Math.max(patientRR + 0.5, meanRR + (stdDev * 3));
       
       const labels = [];
       const dataPoints = [];
@@ -399,7 +483,6 @@
       const stepSize = (maxX - minX) / steps;
 
       for (let x = minX; x <= maxX; x += stepSize) {
-        // Rumus PDF Distribusi Normal
         const exponent = Math.exp(-Math.pow(x - meanRR, 2) / (2 * Math.pow(stdDev, 2)));
         const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * exponent;
         labels.push(x.toFixed(2));
@@ -411,54 +494,15 @@
         data: {
           labels: labels,
           datasets: [
-            {
-              label: 'Distribusi Populasi',
-              data: dataPoints,
-              borderColor: '#94a3b8',
-              backgroundColor: 'rgba(241, 245, 249, 0.6)',
-              fill: true,
-              pointRadius: 0,
-              tension: 0.4
-            },
-            {
-              label: 'Posisi Pasien (RR)',
-              data: labels.map(x => (Math.abs(parseFloat(x) - patientRR) < (stepSize/2)) ? Math.max(...dataPoints) : null),
-              borderColor: '#ef4444',
-              backgroundColor: '#ef4444',
-              borderWidth: 2,
-              pointRadius: 6,
-              pointStyle: 'rectRot', // Bentuk diamond
-              showLine: true,
-              borderDash: [5, 5] // Garis putus-putus ke bawah
-            }
+            { label: 'Distribusi Populasi', data: dataPoints, borderColor: '#94a3b8', backgroundColor: 'rgba(241, 245, 249, 0.6)', fill: true, pointRadius: 0, tension: 0.4 },
+            { label: 'Posisi Pasien (RR)', data: labels.map(x => (Math.abs(parseFloat(x) - patientRR) < (stepSize/2)) ? Math.max(...dataPoints) : null), borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 2, pointRadius: 6, pointStyle: 'rectRot', showLine: true, borderDash: [5, 5] }
           ]
         },
-        options: {
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  if (context.datasetIndex === 1 && context.raw) { return `RR Pasien: ${patientRR.toFixed(2)}x`; }
-                  return null;
-                }
-              }
-            }
-          },
-          scales: {
-            x: { 
-              title: { display: true, text: 'Relative Risk (RR)' },
-              grid: { display: false },
-              ticks: { maxTicksLimit: 8 }
-            },
-            y: { display: false } // Sembunyikan sumbu Y (Frekuensi PDF) karena ini visualisasi konseptual
-          }
-        }
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => { if (ctx.datasetIndex === 1 && ctx.raw) return `RR Pasien: ${patientRR.toFixed(2)}x`; return null; } } } }, scales: { x: { title: { display: true, text: 'Relative Risk (RR)' }, grid: { display: false }, ticks: { maxTicksLimit: 8 } }, y: { display: false } } }
       });
     }
 
-    // 5. FIREBASE HISTORY
+    // 8. FIREBASE LOGIC
     async function saveToCloud(data) {
       try { await db.collection("prs_history").doc(data.sid).set(data); fetchHistory(); } catch (e) { console.error(e); }
     }
@@ -467,6 +511,7 @@
       const s = await db.collection("prs_history").orderBy("ts","desc").limit(10).get();
       document.getElementById('history-list').innerHTML = s.docs.map(doc => `<div class="history-item" onclick='activeIdx=0;loadedSessions=[${JSON.stringify(doc.data())}];renderUI()'><div class="history-id">${doc.data().sid}</div><div class="history-meta">${doc.data().total} Traits</div></div>`).join('');
     }
+    
     async function clearAllHistory() { if(confirm("Hapus semua riwayat Cloud?")){ const s = await db.collection("prs_history").get(); const b = db.batch(); s.forEach(d=>b.delete(d.ref)); await b.commit(); location.reload(); } }
   </script>
 </body>
